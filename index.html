@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RB1 Voice Sketching</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* VOICE: calm, neutral research tool; nothing that hints at pitch or direction
+   IDEA: the plaster corridor of the robot video, one quiet card per step
+   PICTURE: the robot video itself, large at the top of the task steps
+   COLOUR and TYPE: white, warm graphite floor, one signal red for recording; Inter Tight + Inter
+   LAYOUT: one column, phone first, progress line on top, one main action per screen */
+:root{color-scheme:light dark;
+ --bg:light-dark(#ffffff,#111113);--card:light-dark(#ffffff,#1a1a1d);--ink:light-dark(#111111,#f2f2f2);
+ --mute:light-dark(#666666,#a0a0a0);--line:light-dark(#e3e3e3,#333338);--floor:light-dark(#222222,#000000);
+ --rec:#d23f1f;--recsoft:light-dark(#f6ddd5,#4a2219);--ok:light-dark(#2f6b4f,#7cc4a0)}
+:root[data-theme=light]{color-scheme:light}:root[data-theme=dark]{color-scheme:dark}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 Inter,system-ui,sans-serif;overflow-x:clip}
+.wrap{max-width:560px;margin:0 auto;padding:16px 16px 40px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:6px 2px 12px;font-size:14px;color:var(--mute)}
+header b{color:var(--ink);font-weight:600}
+.bar{height:4px;background:var(--line);border-radius:4px;overflow:hidden;margin-bottom:16px}
+.bar i{display:block;height:100%;background:var(--ink);transition:width .3s}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px 20px;box-shadow:0 1px 0 var(--line)}
+h1{font:600 30px/1.08 "Inter Tight",Inter,sans-serif;margin:0 0 10px;text-wrap:balance}
+p{margin:0 0 12px}.lead{font-size:17px}.small{font-size:14px;color:var(--mute)}
+.video{position:relative;border-radius:14px;overflow:hidden;background:var(--floor);aspect-ratio:16/9;margin:0 0 16px}
+.video video{width:100%;height:100%;object-fit:cover;display:block}
+.video button{position:absolute;inset:auto 12px 12px auto}
+.prompt{font-size:19px;font-weight:500;line-height:1.35;margin:0 0 16px}
+.btn{appearance:none;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 16px Inter,sans-serif;min-height:48px;padding:0 18px;border-radius:12px;cursor:pointer}
+.btn.primary{background:var(--ink);color:var(--card);border-color:var(--ink);width:100%}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--rec);outline-offset:2px}
+.rec{display:flex;flex-direction:column;align-items:center;gap:10px;padding:8px 0 18px}
+.recbtn{width:92px;height:92px;border-radius:50%;border:0;background:var(--rec);color:#fff;font:600 15px Inter,sans-serif;cursor:pointer;box-shadow:0 0 0 8px var(--recsoft)}
+.recbtn.on{animation:pulse 1.2s ease-in-out infinite}
+.recbtn:disabled{background:var(--line);box-shadow:none;color:var(--mute);cursor:not-allowed}
+@keyframes pulse{50%{box-shadow:0 0 0 16px var(--recsoft)}}
+@media (prefers-reduced-motion:reduce){.recbtn.on{animation:none}.bar i{transition:none}}
+.timer{font-variant-numeric:tabular-nums;font-size:15px;color:var(--mute);min-height:22px}
+.takes{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:8px}
+.take{display:flex;align-items:center;gap:10px;border:1px solid var(--line);border-radius:12px;padding:8px 10px}
+.take.best{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.take label{display:flex;align-items:center;gap:10px;flex:1;cursor:pointer;min-height:40px}
+.take input{width:20px;height:20px;accent-color:var(--ink)}
+.take .btn{min-height:40px;padding:0 12px;font-size:14px}
+.field{display:grid;gap:6px;margin:0 0 16px}
+.field span{font-size:14px;font-weight:500}
+select{font:16px Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:0 12px;min-height:48px;width:100%}
+select:focus-visible{outline:3px solid var(--rec);outline-offset:2px}
+.nw{white-space:nowrap}
+.codebox{display:flex;flex-direction:column;align-items:center;gap:2px;background:var(--ink);color:var(--card);border-radius:14px;padding:16px;margin:0 0 18px}
+.codebox span{font-size:14px;opacity:.75}.codebox strong{font:600 clamp(30px,9vw,40px)/1.1 'Inter Tight',Inter,sans-serif;letter-spacing:.05em}
+.steps{list-style:none;margin:0 0 16px;padding:0;display:grid;gap:12px}
+.steps li{display:flex;gap:14px;border:1px solid var(--line);border-radius:14px;padding:16px;background:var(--bg)}
+.steps .num{flex:none;width:36px;height:36px;border-radius:50%;background:var(--rec);color:#fff;display:grid;place-items:center;font:600 18px Inter,sans-serif}
+.steps h3{font:600 19px/1.25 'Inter Tight',Inter,sans-serif;margin:5px 0 4px}.steps p{margin:0 0 10px}.steps li>div{flex:1}
+details summary{cursor:pointer;min-height:44px;display:flex;align-items:center}
+input[type=text],textarea{font:16px Inter,sans-serif;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;width:100%}
+textarea{min-height:84px;resize:vertical}
+.check{display:flex;gap:12px;align-items:flex-start;margin:4px 0 18px;cursor:pointer}
+.check input{width:22px;height:22px;margin-top:2px;accent-color:var(--ink);flex:none}
+.note{font-size:14px;border-radius:10px;padding:10px 12px;background:var(--recsoft);margin:0 0 16px}
+.row{display:flex;gap:10px;margin-top:6px}.row .btn{flex:1}
+.list{margin:0 0 16px;padding-left:20px}.list li{margin-bottom:6px}
+pre{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px;font-size:13px;overflow-x:auto;max-height:220px}
+.done{color:var(--ok);font-weight:600}
+@media(max-width:400px){h1{font-size:26px}.card{padding:18px 16px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <header><span><b>RB1</b> voice sketching</span><span id="stepLabel"></span></header>
+ <div class="bar"><i id="barFill"></i></div>
+ <main class="card" id="screen" aria-live="polite"></main>
+</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+{
+const MEDIA={left:'media/turn_left.mp4',right:'media/turn_right.mp4'};
+const CONTACT='upload it to the link the team gave you, or e-mail it to the team';
+const Q=[
+ {id:'age',label:'Age',req:1,opts:['18–24','25–34','35–44','45–54','55 or older','Prefer not to say']},
+ {id:'gender',label:'Gender',req:1,opts:['Woman','Man','Non-binary','Prefer to self-describe','Prefer not to say']},
+ {id:'gender_self',label:'If you prefer to self-describe',req:0},
+ {id:'nationality',label:'Nationality',req:1},
+ {id:'native_language',label:'Native language(s)',req:1},
+ {id:'handedness',label:'Which hand do you write with?',req:1,opts:['Right','Left','Both']},
+ {id:'hearing',label:'Do you have any known hearing problems?',req:1,opts:['No','Yes','Prefer not to say']}
+];
+const CONSENT_POINTS=['Your sounds are recorded on this phone.','We ask a few short questions about you.','Your recordings and answers are labelled with your participant code, not your name, and are used anonymously in our course report.','Your name is kept only in a separate consent record, which the project group stores apart from the data.','You can stop at any time, and you can ask us to delete your data until the end of the course (January 2027).'];
+const CONSENT_AGREE='I have read the points above, agree to take part and agree to be recorded.';
+const CODE_RE=/^P\d{2,3}$/;
+const orderFor=c=>parseInt(c.slice(1),10)%2===1?['left','right']:['right','left'];
+const S={pid:'',q:{},name:'',consent:false,consentAt:null,order:['left','right'],takes:{warmup:[],left:[],right:[]},best:{},notes:{facilitator:''},watched:{},step:0,demo:false,started:new Date().toISOString()};
+const MAXTAKES={warmup:1,left:3,right:3};
+const $=s=>document.querySelector(s);
+const screenEl=$('#screen');
+
+/* ---------- autosave: answers in localStorage, recordings in IndexedDB ---------- */
+const LS='rb1vs_v1';let db=null,resumeMode=false,clearArmed=false,restartArmed=false;
+const withTimeout=(p,ms)=>Promise.race([p,new Promise(r=>setTimeout(()=>r(null),ms))]);
+function idb(){return withTimeout(new Promise(res=>{try{const r=indexedDB.open('rb1vs',1);r.onupgradeneeded=()=>r.result.createObjectStore('takes');r.onsuccess=()=>{db=r.result;res(db)};r.onerror=()=>res(null)}catch(e){res(null)}}),1500)}
+function idbDo(mode,fn){return withTimeout(new Promise(res=>{if(!db)return res(null);try{const r=fn(db.transaction('takes',mode).objectStore('takes'));r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)}catch(e){res(null)}}),1500)}
+const idbPut=(id,b)=>idbDo('readwrite',s=>s.put(b,id)),idbGet=id=>idbDo('readonly',s=>s.get(id)),idbDel=id=>idbDo('readwrite',s=>s.delete(id)),idbClear=()=>idbDo('readwrite',s=>s.clear());
+function persist(){if(!ready)return;try{const copy={...S,takes:Object.fromEntries(Object.entries(S.takes).map(([k,v])=>[k,v.map(t=>({id:t.id,dur:t.dur,rate:t.rate||null}))]))};localStorage.setItem(LS,JSON.stringify(copy))}catch(e){}}
+async function restore(){try{const raw=localStorage.getItem(LS);if(!raw)return false;Object.assign(S,JSON.parse(raw));
+ for(const v of Object.values(S.takes))for(const t of v){const b=await idbGet(t.id);if(b){t.blob=b;t.url=URL.createObjectURL(b)}}return true}catch(e){return false}}
+async function wipe(){try{localStorage.removeItem(LS)}catch(e){}await idbClear()}
+
+/* ---------- recording: real mic when hosted over HTTPS, demo takes otherwise ---------- */
+let rec=null,timerId=null,touched=false,ready=false;
+async function startRec(key,onTick){
+ try{
+  const stream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false,channelCount:1}});
+  let ctx;try{ctx=new AudioContext({sampleRate:44100})}catch(e){ctx=new AudioContext()}
+  const src=ctx.createMediaStreamSource(stream),proc=ctx.createScriptProcessor(4096,1,1),chunks=[];
+  proc.onaudioprocess=e=>chunks.push(new Float32Array(e.inputBuffer.getChannelData(0)));
+  src.connect(proc);proc.connect(ctx.destination);
+  rec={key,stream,ctx,proc,src,chunks,t0:Date.now()};
+ }catch(e){S.demo=true;rec={key,demo:true,t0:Date.now()}}
+ timerId=setInterval(()=>onTick((Date.now()-rec.t0)/1000),100);
+}
+function stopRec(){
+ clearInterval(timerId);if(!rec)return null;
+ const dur=(Date.now()-rec.t0)/1000;let take={id:'t'+Date.now()+Math.random().toString(36).slice(2,6),dur,url:null,blob:null};
+ if(!rec.demo){
+  rec.proc.disconnect();rec.src.disconnect();rec.stream.getTracks().forEach(t=>t.stop());
+  const blob=toWav(rec.chunks,rec.ctx.sampleRate);rec.ctx.close();
+  take.blob=blob;take.url=URL.createObjectURL(blob);take.rate=rec.ctx.sampleRate;idbPut(take.id,blob);
+ }
+ rec=null;return take;
+}
+function toWav(chunks,rate){
+ const n=chunks.reduce((a,c)=>a+c.length,0),buf=new ArrayBuffer(44+n*2),v=new DataView(buf);
+ const w=(o,s)=>{for(let i=0;i<s.length;i++)v.setUint8(o+i,s.charCodeAt(i))};
+ w(0,'RIFF');v.setUint32(4,36+n*2,true);w(8,'WAVE');w(12,'fmt ');v.setUint32(16,16,true);v.setUint16(20,1,true);v.setUint16(22,1,true);
+ v.setUint32(24,rate,true);v.setUint32(28,rate*2,true);v.setUint16(32,2,true);v.setUint16(34,16,true);w(36,'data');v.setUint32(40,n*2,true);
+ let o=44;for(const c of chunks)for(let i=0;i<c.length;i++){const s=Math.max(-1,Math.min(1,c[i]));v.setInt16(o,s<0?s*0x8000:s*0x7fff,true);o+=2}
+ return new Blob([buf],{type:'audio/wav'});
+}
+const fmt=t=>t.toFixed(1)+' s';
+
+/* ---------- recorder widget shared by every recording step ---------- */
+function recorder(key,label){
+ const takes=S.takes[key],max=MAXTAKES[key],full=takes.length>=max;
+ const list=takes.map((t,i)=>`<li class="take ${S.best[key]===i?'best':''}">
+   <label>${max>1?`<input type="radio" name="best-${key}" data-best="${key}" value="${i}" ${S.best[key]===i?'checked':''}>`:''}
+   <span>${max>1?`Take ${i+1}`:'Recording'} <span class="small">${fmt(t.dur)}</span></span></label>
+   <button class="btn" data-play="${key}:${i}">Play</button>
+   <button class="btn" data-del="${key}:${i}" aria-label="Delete take ${i+1}">Delete</button></li>`).join('');
+ return `<div class="rec">
+   <button class="recbtn" id="recbtn" data-key="${key}" ${full?'disabled':''}>${full?'Done':'Record'}</button>
+   <div class="timer" id="timer">${full?(max>1?'Maximum of '+max+' takes reached':'Recorded'):label}</div>
+  </div>
+  ${takes.length?`<ul class="takes">${list}</ul>`:''}
+  ${max>1&&takes.length>1?`<p class="small">Choose the take you like best.</p>`:''}`;
+}
+
+/* ---------- steps ---------- */
+const turn=(n)=>{const dir=()=>S.order[n];return{
+ id:'turn'+n,
+ ok:()=>S.takes[dir()].length>0&&S.best[dir()]!==undefined,
+ html:()=>{const d=dir();return `<div class="video"><video id="vid" src="${MEDIA[d]}" playsinline muted preload="auto"></video>
+   <button class="btn" id="playvid">${S.watched[d]?'Watch again':'Play video'}</button></div>
+  <h1>Clip ${n+1} of 2</h1>
+  <p class="prompt">${S.watched[d]?'Please make a sound with your voice that the robot could play just before it does this.':'Watch what the robot does.'}</p>
+  ${S.watched[d]?recorder(d,'Tap to record, tap again to stop'):'<p class="small">Recording opens after the clip has played once.</p>'}`}}};
+const steps=[
+ {id:'start',ok:()=>CODE_RE.test(S.pid),html:()=>`<h1>Welcome</h1>
+  <p class="lead">This task is part of a course project at KTH. You will make a few short sounds with your voice. It takes about 5 minutes. There are no right or wrong sounds.</p>
+  <p>Please do this alone in a quiet place, and hold the phone about a hand's width from your mouth when recording.</p>
+  <label class="field"><span>Your participant code</span><input type="text" id="pid" value="${esc(S.pid)}" placeholder="P01" autocomplete="off" autocapitalize="characters" style="font:600 26px Inter Tight,Inter,sans-serif;letter-spacing:.05em;text-align:center"></label>
+  <p class="small" id="pidhint">${S.pid&&!CODE_RE.test(S.pid)?'The code looks like P01. Please check the code the RB1 team gave you.':'Type the code the RB1 team gave you.'}</p>`},
+ {id:'consent',ok:()=>S.consent&&S.name.length>1,html:()=>`<h1>Consent</h1>
+  <p>We will ask you to make a few short sounds with your voice. There are no right or wrong sounds, and nobody is judging your voice.</p>
+  <ul class="list">${CONSENT_POINTS.map(x=>`<li>${x}</li>`).join('')}</ul>
+  <label class="field"><span>Your full name</span><input type="text" id="name" value="${esc(S.name)}" autocomplete="name"></label>
+  <p class="small" style="margin-top:-8px">Used only for the consent record, stored apart from your recordings and answers.</p>
+  <label class="check"><input type="checkbox" id="consent" ${S.consent?'checked':''}><span>${CONSENT_AGREE}</span></label>`},
+ {id:'about',ok:()=>Q.filter(q=>q.req).every(q=>S.q[q.id]),html:()=>`<h1>About you</h1>
+  <p>A few short questions. They help us describe who took part.</p>
+  ${Q.map(q=>`<label class="field"><span>${q.label}${q.req?'':' <span class="small">(optional)</span>'}</span>${q.opts
+   ?`<select data-q="${q.id}"><option value="">Choose</option>${q.opts.map(o=>`<option ${S.q[q.id]===o?'selected':''}>${o}</option>`).join('')}</select>`
+   :`<input type="text" data-q="${q.id}" value="${esc(S.q[q.id]||'')}" autocomplete="off">`}</label>`).join('')}`},
+ {id:'warmup',ok:()=>S.takes.warmup.length>0,html:()=>`<h1>Warm-up</h1>
+  <p class="prompt">How would a small robot sound when it switches on?</p>
+  <p class="small">Any sound is fine: noises, beeps, hums.</p>${recorder('warmup','Tap to record, tap again to stop')}`},
+ {id:'context',ok:()=>true,html:()=>`<h1>The robot</h1>
+  <p class="lead">Next you will see a small delivery robot. It has one small speaker, and it needs to tell people around it where it is going.</p>
+  <p>You will see two short clips. After each clip, you make a sound for what the robot does. A team member may ask you about your sounds afterwards.</p>`},
+ turn(0),turn(1),
+ {id:'save',ok:()=>false,html:()=>{const files=fileList();return `<h1>Thank you</h1>
+  <p class="lead">Two more things and you are done.</p>
+  <div class="codebox"><span>Your code</span><strong>${S.pid}</strong></div>
+  <ol class="steps">
+   <li><b class="num">1</b><div><h3>Save the file</h3><p>Your phone saves <b class="nw">${zipName()}</b>.</p>
+    <button class="btn primary" id="share">Save file</button><p class="small" id="savemsg" style="margin:8px 0 0"></p></div></li>
+   <li><b class="num">2</b><div><h3>Send it to the RB1 team</h3><p>${CONTACT[0].toUpperCase()+CONTACT.slice(1)}. Write your code <b class="nw">${S.pid}</b> in the message.</p></div></li>
+  </ol>
+  <button class="btn" id="clearall" style="width:100%;margin:4px 0 12px">Sent it? Delete it from this phone</button>
+  ${S.demo?'<p class="note">Preview mode: the microphone and file saving are blocked in this preview, so takes are placeholders. Both work once the page is hosted (Vercel).</p>':''}
+  <details style="margin-top:8px"><summary class="small">For the facilitator</summary>
+  <label class="field" style="margin-top:10px"><span>Notes (only if a facilitator is present)</span><textarea data-note="facilitator">${S.notes.facilitator}</textarea></label>
+  <p class="small">Inside the zip:</p>
+  <ul class="list small">${files.map(f=>`<li>${f.name}</li>`).join('')}<li>${S.pid}_session.json</li><li>${S.pid}_questionnaire.csv</li><li>${baseName()}_consent.txt (outside the data folder)</li></ul>
+  <pre id="json">${esc(JSON.stringify(meta(),null,2))}</pre>
+  <button class="btn" id="copyjson">Copy session data</button> <span id="copied" class="small"></span></details>`}}
+];
+const esc=s=>s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+
+/* ---------- files and session data ---------- */
+function fileList(){
+ const out=[];
+ for(const [key,takes] of Object.entries(S.takes)){
+  takes.forEach((t,i)=>{
+   let name;
+   if(key==='warmup')name=`${S.pid}_warmup.wav`;
+   else name=`${S.pid}_${key}_take${i+1}${S.best[key]===i?'_best':''}.wav`;
+   out.push({name,take:t});
+  });
+ }
+ return out;
+}
+function qCsv(){const keys=['participant',...Q.map(q=>q.id)],cell=v=>'"'+String(v??'').replace(/"/g,'""')+'"';
+ return keys.join(',')+'\n'+[S.pid,...Q.map(q=>S.q[q.id])].map(cell).join(',')+'\n'}
+const recDate=()=>{const d=new Date(S.started),p=n=>String(n).padStart(2,'0');return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}`};
+const baseName=()=>`RB1_${S.pid}_${recDate()}`;
+const zipName=()=>`${baseName()}.zip`;
+const consentText=()=>['RB1 voice sketching: consent record','Project: DM2350 Human Perception for Information Technology, KTH (supervisor Roberto Bresin)','',...CONSENT_POINTS.map(x=>'- '+x),'',CONSENT_AGREE,'','Name: '+S.name,'Participant code: '+S.pid,'Recording date: '+recDate(),'Agreed at: '+(S.consentAt||''),''].join('\n');
+function meta(){return{participant:S.pid,recording_date:recDate(),started:S.started,finished:new Date().toISOString(),order:S.order,questionnaire:S.q,device:navigator.userAgent,
+ takes:Object.fromEntries(Object.entries(S.takes).map(([k,v])=>[k,v.map(t=>+t.dur.toFixed(2))])),
+ best:Object.fromEntries(['left','right'].map(d=>[d,S.best[d]!==undefined?S.best[d]+1:null])),
+ facilitator_notes:S.notes.facilitator,preview_mode:S.demo}}
+
+/* ---------- render and events ---------- */
+function render(){
+ if(resumeMode){
+  $('#stepLabel').textContent='';$('#barFill').style.width='0%';
+  screenEl.innerHTML=`<h1>Welcome back</h1>
+   <p class="lead">You started this study earlier on this phone.</p>
+   <p style="font:600 32px/1.1 'Inter Tight',Inter,sans-serif;letter-spacing:.04em;margin:0 0 16px">${S.pid}</p>
+   <p>Your recordings so far are saved.</p>
+   <button class="btn primary" id="resume">Continue where I stopped</button>
+   <button class="btn" id="restart" style="width:100%;margin-top:10px">${restartArmed?'Tap again to delete everything and start over':'Start over'}</button>`;
+  return}
+ const st=steps[S.step];
+ $('#stepLabel').textContent=`Step ${S.step+1} of ${steps.length}`;
+ $('#barFill').style.width=((S.step+1)/steps.length*100)+'%';
+ const last=S.step===steps.length-1;
+ screenEl.innerHTML=st.html()+(last?'':`<div class="row">${S.step>0?'<button class="btn" id="back">Back</button>':''}<button class="btn primary" id="next" ${st.ok()?'':'disabled'}>Continue</button></div>`);
+ const v=$('#vid');
+ if(v){const d=S.order[st.id==='turn0'?0:1];v.addEventListener('ended',()=>{if(!S.watched[d]){S.watched[d]=true;render()}else $('#playvid').textContent='Watch again'})}
+ persist();
+}
+function refreshNext(){const b=$('#next');if(b)b.disabled=!steps[S.step].ok()}
+screenEl.addEventListener('input',e=>{
+ const t=e.target;
+ if(t.id==='name'){S.name=t.value.trim();refreshNext()}
+ if(t.dataset.q){S.q[t.dataset.q]=t.value;refreshNext()}
+ if(t.id==='pid'){S.pid=t.value.trim().toUpperCase().replace(/\s+/g,'');if(CODE_RE.test(S.pid))S.order=orderFor(S.pid);const hint=$('#pidhint');if(hint)hint.textContent=S.pid.length>=3&&!CODE_RE.test(S.pid)?'The code looks like P01. Please check the code the RB1 team gave you.':'Type the code the RB1 team gave you.';refreshNext()}
+ if(t.dataset.note!==undefined)S.notes[t.dataset.note]=t.value;
+ persist();
+});
+screenEl.addEventListener('change',e=>{
+ const t=e.target;
+ if(t.id==='consent'){S.consent=t.checked;S.consentAt=t.checked?new Date().toISOString():null;refreshNext()}
+ if(t.dataset.best){S.best[t.dataset.best]=+t.value;render()}
+ persist();
+});
+let player=null;
+screenEl.addEventListener('click',async e=>{
+ const t=e.target.closest('button');if(!t)return;
+ if(t.id!=='resume'&&t.id!=='restart')touched=true;
+ if(t.id==='next'){S.step++;render();window.scrollTo(0,0);return}
+ if(t.id==='resume'){resumeMode=false;render();return}
+ if(t.id==='restart'){if(!restartArmed){restartArmed=true;render();return}await wipe();location.reload();return}
+ if(t.id==='clearall'){if(!clearArmed){clearArmed=true;t.textContent='Tap again to confirm. The file you saved is not affected';return}
+  await wipe();screenEl.innerHTML='<h1>All done</h1><p class="lead">The data has been removed from this browser. You can close this page. Thank you for taking part.</p>';return}
+ if(t.id==='back'){S.step--;render();return}
+ if(t.id==='playvid'){const v=$('#vid');v.currentTime=0;try{await v.play()}catch(err){}t.textContent='Playing…';return}
+ if(t.id==='recbtn'){
+  const key=t.dataset.key,timer=$('#timer');
+  if(!rec){t.classList.add('on');t.textContent='Stop';timer.textContent='Starting…';
+   await startRec(key,s=>{timer.textContent='Recording '+fmt(s)});}
+  else{const take=stopRec();t.classList.remove('on');
+   if(take){S.takes[key].push(take);if(MAXTAKES[key]===1||S.takes[key].length===1)S.best[key]=S.takes[key].length-1}
+   render()}
+  return}
+ if(t.dataset.play){const [k,i]=t.dataset.play.split(':'),take=S.takes[k][+i];
+  if(player){player.pause();player=null}
+  if(take.url){player=new Audio(take.url);try{await player.play()}catch(err){}}
+  else{t.textContent='Preview only';setTimeout(()=>t.textContent='Play',1200)}
+  return}
+ if(t.dataset.del){const [k,i]=t.dataset.del.split(':');const gone=S.takes[k].splice(+i,1)[0];if(gone)idbDel(gone.id);
+  if(S.best[k]===+i)delete S.best[k];else if(S.best[k]>+i)S.best[k]--;
+  if(S.takes[k].length===1)S.best[k]=0;render();return}
+ if(t.id==='share'){
+  const msg=$('#savemsg');
+  if(!window.JSZip){msg.textContent='Could not load the zip tool. Check the internet connection and try again.';return}
+  t.disabled=true;t.textContent='Preparing…';
+  const zip=new JSZip(),dir=zip.folder(baseName());
+  fileList().forEach(f=>{if(f.take.blob)dir.file(f.name,f.take.blob)});
+  dir.file(`${S.pid}_session.json`,JSON.stringify(meta(),null,2));
+  dir.file(`${S.pid}_questionnaire.csv`,qCsv());
+  zip.file(`${baseName()}_consent.txt`,consentText());
+  const blob=await zip.generateAsync({type:'blob'}),file=new File([blob],zipName(),{type:'application/zip'});
+  let shared=false;
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:zipName()});shared=true}}catch(err){}
+  if(!shared){try{const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=zipName();document.body.appendChild(a);a.click();a.remove()}catch(err){}}
+  t.disabled=false;t.textContent='Save file again';
+  msg.textContent=shared?'Shared. If you have not sent it yet, tap Save file again.':`${zipName()} should now be in your Downloads or Files app.`;
+  return}
+ if(t.id==='copyjson'){try{await navigator.clipboard.writeText(JSON.stringify(meta(),null,2));$('#copied').textContent='Copied'}catch(err){$('#copied').textContent='Copy is not available here'}}
+});
+render();
+(async()=>{try{await idb();if(!touched&&await restore()){if(S.step>0&&S.step<steps.length)resumeMode=true;else S.step=0;ready=true;render()}}catch(e){}ready=true;persist()})();
+}
+</script>
+</body>
+</html>
